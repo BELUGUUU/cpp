@@ -114,11 +114,12 @@ void reduceFactors(vector<string> &facs) {
         for (int i = 0; i < it->second; i++) facs.push_back(it->first);
 }
 
-// 在项集合里把相反项 (x, N(x)) 消掉，并去掉 0
+// 在项集合里把相反项 (x, N(x)) 消掉，并去掉 0 与 -0
 void reduceTerms(vector<string> &terms) {
     map<string, int> cnt;
     for (size_t i = 0; i < terms.size(); i++) {
-        if (terms[i] == "n0") continue;                        // 规则 (6)
+        // 规则 (6)：a+0 = a-0 = a；N(n0) 即 -0，同样由 a-0=a 消去
+        if (terms[i] == "n0" || terms[i] == "N(n0)") continue;
         cnt[terms[i]]++;
     }
     vector<pair<string, int> > items(cnt.begin(), cnt.end());
@@ -191,12 +192,14 @@ bool divByZero(const Node *x) {
 }
 
 /* ---------- 枚举 ---------- */
-void subsets(const vector<int> &pool, int k, int start,
+// 枚举 [0,n) 中大小为 k 的「下标」子集（按下标递增，保证「有序」）
+// 注意必须按位置（下标）划分数组：数字有重复时按值匹配会拿错位置
+void subsets(int n, int k, int start,
              vector<int> &cur, vector<vector<int> > &out) {
     if ((int)cur.size() == k) { out.push_back(cur); return; }
-    for (int i = start; i < (int)pool.size(); i++) {
-        cur.push_back(pool[i]);
-        subsets(pool, k, i + 1, cur, out);
+    for (int i = start; i < n; i++) {
+        cur.push_back(i);
+        subsets(n, k, i + 1, cur, out);
         cur.pop_back();
     }
 }
@@ -207,18 +210,23 @@ vector<Node *> gen(const vector<int> &pool) {
     if (n == 1) { res.push_back(new Node((long long)pool[0])); return res; }
 
     for (int i = 1; i < n; i++) {
-        vector<vector<int> > leftSets;
+        vector<vector<int> > leftSets;      // 存下标
         vector<int> cur;
-        subsets(pool, i, 0, cur, leftSets);
+        subsets(n, i, 0, cur, leftSets);
 
         for (int o = 0; o < 4; o++) {
             for (size_t s = 0; s < leftSets.size(); s++) {
-                vector<int> L = leftSets[s], R;
-                size_t p = 0;
-                for (int idx = 0; idx < n; idx++) {
-                    if (p < L.size() && pool[idx] == L[p]) { p++; continue; }
-                    R.push_back(pool[idx]);
+                // 左子树取 leftSets[s] 这些「位置」上的数字，
+                // 右子树取剩余位置上的数字（保持原次序）
+                vector<int> L, R;
+                vector<bool> used(n, false);
+                for (size_t t = 0; t < leftSets[s].size(); t++) {
+                    int id = leftSets[s][t];
+                    L.push_back(pool[id]);
+                    used[id] = true;
                 }
+                for (int idx = 0; idx < n; idx++)
+                    if (!used[idx]) R.push_back(pool[idx]);
                 vector<Node *> ls = gen(L);
                 vector<Node *> rs = gen(R);
                 for (size_t a = 0; a < ls.size(); a++)
