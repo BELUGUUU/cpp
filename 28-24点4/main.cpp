@@ -20,6 +20,7 @@
  *     再把 (x, I(x)) 这样的互逆对消掉，排序；
  *   - 数值用精确分数（分子/分母）表示，除法不做浮点近似。
  *   于是「不同解」= 规范化字符串不同；每个等价类取 T 顺序里第一个表达式输出。
+ *   （修正点：与 T/U 同步，枚举时运算符循环提到最外层，保证「T 顺序」一致。）
  *
  * 编译：g++ -O2 -std=c++11 -o main.exe main.cpp
  */
@@ -56,8 +57,8 @@ struct Node {
     char op;              // 0 表示叶子
     long long num;        // 叶子的数字
     Node *l, *r;
-    Node(char o, Node *a = 0, Node *b = 0) : op(o), l(a), r(b), num(0) {}
-    Node(long long n) : op(0), l(0), r(0), num(n) {}
+    Node(char o, Node *a = 0, Node *b = 0) : op(o), num(0), l(a), r(b) {}
+    Node(long long n) : op(0), num(n), l(0), r(0) {}
 };
 
 /* 规范化用的辅助函数 */
@@ -209,26 +210,43 @@ vector<Node *> gen(const vector<int> &pool) {
     int n = (int)pool.size();
     if (n == 1) { res.push_back(new Node((long long)pool[0])); return res; }
 
+    // 第一步：预先算好「i 个数字给左子树」的所有划分（i 升序、子集按下标序），
+    // 左右子树的表达式集合缓存起来给 4 个运算符共用
+    struct Split {
+        vector<Node *> ls, rs;
+    };
+    vector<vector<Split> > splits(n);
     for (int i = 1; i < n; i++) {
         vector<vector<int> > leftSets;      // 存下标
         vector<int> cur;
         subsets(n, i, 0, cur, leftSets);
 
-        for (int o = 0; o < 4; o++) {
-            for (size_t s = 0; s < leftSets.size(); s++) {
-                // 左子树取 leftSets[s] 这些「位置」上的数字，
-                // 右子树取剩余位置上的数字（保持原次序）
-                vector<int> L, R;
-                vector<bool> used(n, false);
-                for (size_t t = 0; t < leftSets[s].size(); t++) {
-                    int id = leftSets[s][t];
-                    L.push_back(pool[id]);
-                    used[id] = true;
-                }
-                for (int idx = 0; idx < n; idx++)
-                    if (!used[idx]) R.push_back(pool[idx]);
-                vector<Node *> ls = gen(L);
-                vector<Node *> rs = gen(R);
+        for (size_t s = 0; s < leftSets.size(); s++) {
+            // 左子树取 leftSets[s] 这些「位置」上的数字，
+            // 右子树取剩余位置上的数字（保持原次序）
+            vector<int> L, R;
+            vector<bool> used(n, false);
+            for (size_t t = 0; t < leftSets[s].size(); t++) {
+                int id = leftSets[s][t];
+                L.push_back(pool[id]);
+                used[id] = true;
+            }
+            for (int idx = 0; idx < n; idx++)
+                if (!used[idx]) R.push_back(pool[idx]);
+
+            Split sp;
+            sp.ls = gen(L);
+            sp.rs = gen(R);
+            splits[i].push_back(sp);
+        }
+    }
+
+    // 第二步：运算符在最外层，再依次走 i、子集、左右表达式对（与 Problem T 一致）
+    for (int o = 0; o < 4; o++) {
+        for (int i = 1; i < n; i++) {
+            for (size_t s = 0; s < splits[i].size(); s++) {
+                const vector<Node *> &ls = splits[i][s].ls;
+                const vector<Node *> &rs = splits[i][s].rs;
                 for (size_t a = 0; a < ls.size(); a++)
                     for (size_t b = 0; b < rs.size(); b++)
                         res.push_back(new Node(OPS[o], ls[a], rs[b]));
