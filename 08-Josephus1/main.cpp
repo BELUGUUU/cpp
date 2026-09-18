@@ -1,4 +1,5 @@
 // Problem C: Josephus问题(I) 链表实现  OJ 1719
+// 用循环单链表直接模拟：每轮删去报到 k 的人，直到只剩一个结点。
 // 不带头结点循环链表模拟报数，报到 k 的结点删除
 #include <iostream>
 using namespace std;
@@ -38,7 +39,7 @@ int main() {
     while (cin >> n >> k) {
         LinkList h;
         h = CreateList(n);
-        while (--n)
+        while (--n)                       // 每删除一人，剩余人数减一
             h = Execute(h, k);
         cout << h->data << endl;
         delete h;

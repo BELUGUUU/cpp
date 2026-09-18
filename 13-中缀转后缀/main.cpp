@@ -1,4 +1,5 @@
 // Problem O: 中缀表达式转后缀表达式  OJ 1823
+// 借助运算符栈处理优先级与括号，最终输出可直接计算的后缀表达式。
 // 经典调度场算法：操作数直接输出，运算符按优先级出入栈
 #include <iostream>
 #include <stack>
@@ -7,6 +8,7 @@
 using namespace std;
 
 int prec(char c) {
+    // 返回优先级；数字和括号不参与这里的比较。
     if (c == '+' || c == '-') return 1;
     if (c == '*' || c == '/') return 2;
     return 0;

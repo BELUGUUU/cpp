@@ -1,4 +1,5 @@
 // Problem N: 后缀表达式求值  OJ 1824
+// 栈始终保存尚未参与运算的数字；运算符取栈顶两个数并把结果压回。
 // 逐字符扫描：数字进栈；遇运算符弹两个数计算。"*8" 这类粘连写法可自然分开
 #include <iostream>
 #include <stack>
@@ -22,7 +23,7 @@ int main() {
                     i++;
                 }
                 st.push(v);
-            } else {
+            } else {                             // c 是一个二元运算符
                 long long b = st.top(); st.pop();
                 long long a = st.top(); st.pop();
                 long long r = 0;

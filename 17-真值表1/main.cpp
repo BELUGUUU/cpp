@@ -1,4 +1,5 @@
 // Problem H: 真值表(Ⅰ) 词法分析  OJ 2257
+// 先识别多字符逻辑运算符，再收集变量并按从全 1 到全 0 的顺序列组合。
 // 把逻辑表达式切分成词(token)，输出词序列、字母序变量表和变量取值组合
 #include <iostream>
 #include <string>
@@ -11,7 +12,7 @@ int main() {
         while (!line.empty() && line[line.size() - 1] == '\r') line.erase(line.size() - 1);
 
         // ---- 词法分析：整体切词 ----
-        vector<string> toks;
+        vector<string> toks;                           // 按输入顺序保存切出的词
         int i = 0, n = (int)line.size();
         while (i < n) {
             char c = line[i];

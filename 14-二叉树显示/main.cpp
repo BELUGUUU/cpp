@@ -1,4 +1,5 @@
 // Problem P: 二叉树的创建和文本显示  OJ 1826
+// 递归消费先序序列构树，再按“右、根、左”递归打印出横向树形。
 // 先序串建树（# 为空），输出树形左旋 90 度：右子树在上、根居中、左子树在下，每层缩进 4
 #include <iostream>
 #include <sstream>
@@ -12,6 +13,7 @@ struct Node {
 };
 
 Node *build(istringstream &is) {
+    // 一个非空结点后紧跟它的左、右子树，因此可递归读完。
     string tok;
     if (!(is >> tok) || tok == "#") return NULL;
     Node *n = new Node(tok);

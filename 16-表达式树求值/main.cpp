@@ -1,4 +1,5 @@
 // Problem R: 表达式树的值  OJ 1828
+// 构树后递归求值：叶子转数字，内部结点对左右子树结果执行运算。
 // 在 Q 的全括号输出基础上求整数值，输出 (表达式)=值
 #include <iostream>
 #include <sstream>
@@ -26,6 +27,7 @@ string expr(Node *n) {
 }
 
 long long evalTree(Node *n) {
+    // 后序求值保证运算前，左右操作数已经算出。
     if (!n->l && !n->r) {                        // 叶子：数值
         long long v = 0;
         for (size_t i = 0; i < n->data.size(); i++) v = v * 10 + n->data[i] - '0';
