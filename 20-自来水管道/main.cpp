@@ -15,6 +15,7 @@
  * 编译：g++ -O2 -std=c++11 -o main.exe main.cpp
  */
 #include <cstdio>
+#include <vector>
 #include <algorithm>
 using namespace std;
 
@@ -23,30 +24,27 @@ struct Edge {
     bool operator<(const Edge &o) const { return w < o.w; }
 };
 
-int parent[55];
-
-int findRoot(int x) {
-    while (parent[x] != x) {
-        parent[x] = parent[parent[x]];   // 路径压缩（隔代压缩，不用递归）
-        x = parent[x];
-    }
-    return x;
-}
-
 int main() {
     int P, R;
     while (scanf("%d", &P) == 1 && P != 0) {
         scanf("%d", &R);
+
+        // 动态开空间：不再受硬编码上限限制（旧版 parent[55] / e[5000]，
+        // 数据规模一旦超过就会越界，轻则答案错、重则 RE）
+        vector<int> parent(P + 1);
         for (int i = 1; i <= P; i++) parent[i] = i;
 
-        static Edge e[5000];
+        vector<Edge> e(R);
         for (int i = 0; i < R; i++)
             scanf("%d %d %d", &e[i].u, &e[i].v, &e[i].w);
-        sort(e, e + R);
+        sort(e.begin(), e.end());
 
+        // 路径压缩（隔代压缩，不用递归）
         int total = 0, used = 0;
         for (int i = 0; i < R && used < P - 1; i++) {
-            int a = findRoot(e[i].u), b = findRoot(e[i].v);
+            int a = e[i].u, b = e[i].v;
+            while (parent[a] != a) { parent[a] = parent[parent[a]]; a = parent[a]; }
+            while (parent[b] != b) { parent[b] = parent[parent[b]]; b = parent[b]; }
             if (a != b) {
                 parent[a] = b;      // 合并两个集合
                 total += e[i].w;
