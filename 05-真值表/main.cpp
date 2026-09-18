@@ -84,6 +84,10 @@ void   next()    { g_pi++; }
 
 /* ======================= 阶段一：词法分析 ======================= */
 // 返回词序列；遇到非法字符或残缺的 "<-" "->" "|" 立即抛 ParseErr
+// 位置语义：
+//   - 词写到一半就撞到行尾（如 "a<"、"a<-"、"a-"、"a|"）→ 属于「读到末尾仍缺词」，
+//     报 长度+1（缺的那些字符在行尾之后）；
+//   - 词中间出现非法组合（如 "a<-b"、单个 "|" 后面还有别的字符）→ 报该词 1 起始位置。
 void tokenize() {
     g_tok.clear();
     int i = 0;
@@ -94,12 +98,17 @@ void tokenize() {
         string t;
         if (c == '<') {
             if (i + 2 < g_n && g_s[i + 1] == '-' && g_s[i + 2] == '>') { t = "<->"; i += 3; }
+            else if (i + 1 >= g_n ||                                  // '<' 就是行尾
+                     (i + 2 >= g_n && g_s[i + 1] == '-'))             // "a<-" 形式的行尾
+                throw ParseErr(g_n + 1);
             else throw ParseErr(start + 1);
         } else if (c == '-') {
             if (i + 1 < g_n && g_s[i + 1] == '>') { t = "->"; i += 2; }
+            else if (i + 1 >= g_n) throw ParseErr(g_n + 1);           // '-' 在行尾
             else throw ParseErr(start + 1);
         } else if (c == '|') {
             if (i + 1 < g_n && g_s[i + 1] == '|') { t = "||"; i += 2; }
+            else if (i + 1 >= g_n) throw ParseErr(g_n + 1);           // '|' 在行尾
             else throw ParseErr(start + 1);
         } else if (c == '!' || c == '^' || c == '(' || c == ')' || (c >= 'a' && c <= 'z')) {
             t = string(1, c); i++;
